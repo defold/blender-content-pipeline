@@ -22,6 +22,9 @@ Convert one or more .blend files to .gltf files. These will be stored next to th
 
 Inserts a single .gltf file into a defold project and launches the engine runtime.
 --preview-gltf gltf-file.gltf
+
+Cleans the build cache folder
+--clean
 ```
 
 Examples:

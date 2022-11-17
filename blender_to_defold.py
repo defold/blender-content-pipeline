@@ -3,6 +3,7 @@ import argparse
 import platform
 import os
 import subprocess
+import sys
 
 def get_blender_bin():
 	host_platform = platform.system()
@@ -22,9 +23,9 @@ if __name__ == '__main__':
 	parser.add_argument('--verify-blend', nargs='+')
 	parser.add_argument('--blend-to-gltf', nargs='+')
 	parser.add_argument('--preview-gltf', nargs=1)
+	parser.add_argument('--clean')
 
 	args = parser.parse_args()
-
 	if args.fbx_to_blend:
 		print("Converting .fbx files to Blender")
 		run_blender_script("convert_fbx_to_blender.py", args.fbx_to_blend)
@@ -35,3 +36,10 @@ if __name__ == '__main__':
 		print("Previewing .gltf in Defold")
 		import preview_gltf
 		preview_gltf.do_preview(args.preview_gltf[0])
+	if args.clean:
+		print("Cleaning build folder")
+		import preview_gltf
+		preview_gltf.do_clean()
+
+	if not any(vars(args).values()):
+		parser.print_help(sys.stderr)
