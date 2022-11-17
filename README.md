@@ -4,6 +4,12 @@
 
 * Blender
 * Python 3.x
+* pygltflib
+
+```
+Install pygltflib package
+python -m pip install pygltflib
+```
 
 ## Usage
 
