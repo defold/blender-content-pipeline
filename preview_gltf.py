@@ -1,5 +1,6 @@
 import os
 import platform
+import shutil
 import stat
 import subprocess
 import urllib.request
@@ -11,6 +12,8 @@ DEFOLD_SHA                   = "9c44c4a9b6cbc9d0cb66b7027b7c984bf364a568"
 DEFOLD_BOB_JAR_URL           = "%s/%s/bob/bob.jar" % (DEFOLD_HTTP_BASE, DEFOLD_SHA)
 DEFOLD_DMENGINE_URL_TEMPLATE = "%s/%s/engine/x86_64-%s/dmengine%s"
 DEFOLD_PREVIEW_PROJECT_URL   = "https://github.com/defold/pbr-viewer/archive/refs/heads/master.zip"
+
+MODEL_PATH = "main/preview.glb"
 
 def get_host_platform_desc():
     # platform, extension
@@ -70,7 +73,11 @@ def make_build_tools():
 
 def make_project(gltf):
     get_template_project()
-    subprocess.run(["java", "-jar", "../bob.jar"], cwd=get_template_project_path())
+
+    template_project_path = get_template_project_path()
+    template_model_path = "%s/%s" % (template_project_path, MODEL_PATH)
+    shutil.copy(gltf, template_model_path)
+    subprocess.run(["java", "-jar", "../bob.jar", "resolve", "build"], cwd=get_template_project_path())
 
 def do_preview(gltf):
     print("Previewing %s file" % gltf)
