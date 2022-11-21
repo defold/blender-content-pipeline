@@ -163,13 +163,18 @@ def make_project(gltf):
         defold_material.set_fragment_program(FRAGMENT_PATH)
 
         defold_material.add_tag("model")
+        defold_material.add_sampler("tex_base")
+        defold_material.add_sampler("tex_metallic_roughness")
         defold_material.add_sampler("tex_normal")
         defold_material.add_sampler("tex_occlusion")
         defold_material.add_sampler("tex_emissive")
 
-        defold_material.add_texture(defold_content_helpers.TEXTURE_NORMAL, get_texture(gltf_file.materials[i].normalTexture))
+        defold_material.add_texture(defold_content_helpers.TEXTURE_BASE,               get_texture(gltf_file.materials[i].pbrMetallicRoughness.baseColorTexture))
+        defold_material.add_texture(defold_content_helpers.TEXTURE_METALLIC_ROUGHNESS, get_texture(gltf_file.materials[i].pbrMetallicRoughness.metallicRoughnessTexture))
+
+        defold_material.add_texture(defold_content_helpers.TEXTURE_NORMAL,    get_texture(gltf_file.materials[i].normalTexture))
         defold_material.add_texture(defold_content_helpers.TEXTURE_OCCLUSION, get_texture(gltf_file.materials[i].occlusionTexture))
-        defold_material.add_texture(defold_content_helpers.TEXTURE_EMISSIVE, get_texture(gltf_file.materials[i].emissiveTexture))
+        defold_material.add_texture(defold_content_helpers.TEXTURE_EMISSIVE,  get_texture(gltf_file.materials[i].emissiveTexture))
 
         defold_material.add_constant(defold_content_helpers.CONSTANT_VERTEX, defold_content_helpers.CONSTANT_TYPE_VIEW,       "u_mtx_view")
         defold_material.add_constant(defold_content_helpers.CONSTANT_VERTEX, defold_content_helpers.CONSTANT_TYPE_WORLD,      "u_mtx_world")
