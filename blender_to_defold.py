@@ -4,18 +4,7 @@ import platform
 import os
 import subprocess
 import sys
-
-def get_blender_bin():
-	host_platform = platform.system()
-	if host_platform == "Darwin":
-		return "/Applications/Blender.app/Contents/MacOS/Blender"
-	else:
-		print("Unable to find blender installation")
-		os.exit(-1)
-
-def run_blender_script(path, args):
-	blender_bin = get_blender_bin()
-	subprocess.run([blender_bin, '-b', '-P', path, "--"] + args)
+import blender_utils
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Convert blender content to Defold')
@@ -28,10 +17,10 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	if args.fbx_to_blend:
 		print("Converting .fbx files to Blender")
-		run_blender_script("convert_fbx_to_blender.py", args.fbx_to_blend)
+		blender_utils.run_blender_script("convert_fbx_to_blender.py", args.fbx_to_blend)
 	if args.blend_to_gltf:
 		print("Converting .blend files to GLTF")
-		run_blender_script("convert_blend_to_gltf.py", args.blend_to_gltf)
+		blender_utils.run_blender_script("convert_blend_to_gltf.py", args.blend_to_gltf)
 	if args.preview_gltf:
 		print("Previewing .gltf in Defold")
 		import preview_gltf

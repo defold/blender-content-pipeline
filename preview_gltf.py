@@ -8,6 +8,7 @@ import urllib.request
 import zipfile
 
 import defold_content_helpers
+import blender_utils
 
 # Build paths
 BUILD_TOOLS_FOLDER           = "build_tools"
@@ -18,11 +19,17 @@ DEFOLD_DMENGINE_URL_TEMPLATE = "%s/%s/engine/x86_64-%s/dmengine%s"
 DEFOLD_PREVIEW_PROJECT_URL   = "https://github.com/defold/pbr-viewer/archive/refs/heads/master.zip"
 
 # Scene content paths
-MODEL_PATH    = "main/preview.glb"
-MATERIAL_PATH = "main/materials"
-TEXTURE_PATH  = "main/textures"
-VERTEX_PATH   = "/builtins/materials/model.vp"
-FRAGMENT_PATH = "/main/preview.fp"
+NONE_TEXTURE_PATH = "/builtins/graphics/particle_blob.png"
+VERTEX_PATH       = "/assets/shaders/preview.vp"
+FRAGMENT_PATH     = "/assets/shaders/preview.fp"
+
+# Generated output paths
+MATERIAL_PATH     = "main/%s/materials"
+MESH_PATH         = "main/%s/meshes"
+TEXTURE_PATH      = "main/%s/textures"
+MODEL_PATH        = "main/%s/models"
+GAMEOBJECT_PATH   = "main/%s/gameobjects"
+COLLECTION_PATH   = "main/%s/collections"
 
 def get_host_platform_desc():
     # platform, extension
@@ -79,35 +86,71 @@ def make_build_tools():
     get_bob()
     get_dmengine()
 
-def write_material(material):
+def write_material(project_path, material):
     data = material.serialize()
-    path = "%s/%s/%s.material" % (get_template_project_path(), MATERIAL_PATH, material.name)
+    path = "%s/%s/%s.material" % (get_template_project_path(), MATERIAL_PATH % project_path, material.name)
+    with open(path, "w") as f:
+        f.write(data)
+
+def write_model(project_path, model):
+    data = model.serialize()
+    path = "%s/%s/%s.model" % (get_template_project_path(), MODEL_PATH % project_path, model.name)
+    with open(path, "w") as f:
+        f.write(data)
+
+def write_gameobject(project_path, go):
+    data = go.serialize()
+    path = "%s/%s/%s.go" % (get_template_project_path(), GAMEOBJECT_PATH % project_path, go.name)
+    with open(path, "w") as f:
+        f.write(data)
+
+def write_collection(project_path, col):
+    data = col.serialize()
+    path = "%s/%s/%s.collection" % (get_template_project_path(), COLLECTION_PATH % project_path, col.name)
+    with open(path, "w") as f:
+        f.write(data)
+
+def write_collection_proxy(col_proxy):
+    data = col_proxy.serialize()
+    path = "%s/main/preview.collectionproxy" % (get_template_project_path())
     with open(path, "w") as f:
         f.write(data)
 
 def make_project_content(gltf):
-    template_project_path = get_template_project_path()
-    template_model_path = "%s/%s" % (template_project_path, MODEL_PATH)
-    shutil.copy(gltf, template_model_path)
     subprocess.run(["java", "-jar", "../bob.jar", "resolve", "build"], cwd=get_template_project_path())
 
 def make_project(gltf):
+    project_path = os.path.basename(gltf)
+
     get_template_project()
 
     import pygltflib
     from pygltflib.utils import ImageFormat
     gltf_file = pygltflib.GLTF2().load(gltf)
 
-    image_base_path = "%s/%s" % (get_template_project_path(), TEXTURE_PATH)
-    os.makedirs(image_base_path, exist_ok=True)
+    for x in [TEXTURE_PATH, MATERIAL_PATH, MODEL_PATH, GAMEOBJECT_PATH, COLLECTION_PATH]:
+        folder = "%s/%s" % (get_template_project_path(), x % project_path)
+        os.makedirs(folder, exist_ok=True)
 
-    material_base_path = "%s/%s" % (get_template_project_path(), MATERIAL_PATH)
-    os.makedirs(material_base_path, exist_ok=True)
+    image_base_path = "%s/%s" % (get_template_project_path(), TEXTURE_PATH % project_path)
+    gltf_base_path = "%s/%s" % (get_template_project_path(), MESH_PATH % project_path)
+    blender_utils.run_blender_script("convert_gltf_separate_files.py", [gltf, gltf_base_path])
 
-    # pygltflib doesn't seem to support exporting images that great,
-    # so we have to do this awkward thing for now..
+    defold_collection = defold_content_helpers.collection("content")
+
+    defold_collection_proxy = defold_content_helpers.collection_proxy("preview")
+    defold_collection_proxy.set_collection("/main/%s/collections/content.collection" % project_path)
+
+    defold_material_lut = {}
+    defold_texture_lut = {}
+
+    def get_texture(tex):
+        if tex != None:
+            return defold_texture_lut[tex.index]
+
     gltf_file.convert_images(ImageFormat.FILE, path=image_base_path)
     for i in range(len(gltf_file.images)):
+        defold_texture_lut[i] = gltf_file.images[i].name
         image_path_i     = "%s/%s.png" % (image_base_path, i)
         image_path_named = "%s/%s.png" % (image_base_path, gltf_file.images[i].name)
         shutil.move(image_path_i, image_path_named)
@@ -120,9 +163,13 @@ def make_project(gltf):
         defold_material.set_fragment_program(FRAGMENT_PATH)
 
         defold_material.add_tag("model")
-        defold_material.add_sampler(gltf_file.materials[i].normalTexture,    "tex_normal")
-        defold_material.add_sampler(gltf_file.materials[i].occlusionTexture, "tex_occlusion")
-        defold_material.add_sampler(gltf_file.materials[i].emissiveTexture,  "tex_emissive")
+        defold_material.add_sampler("tex_normal")
+        defold_material.add_sampler("tex_occlusion")
+        defold_material.add_sampler("tex_emissive")
+
+        defold_material.add_texture(defold_content_helpers.TEXTURE_NORMAL, get_texture(gltf_file.materials[i].normalTexture))
+        defold_material.add_texture(defold_content_helpers.TEXTURE_OCCLUSION, get_texture(gltf_file.materials[i].occlusionTexture))
+        defold_material.add_texture(defold_content_helpers.TEXTURE_EMISSIVE, get_texture(gltf_file.materials[i].emissiveTexture))
 
         defold_material.add_constant(defold_content_helpers.CONSTANT_VERTEX, defold_content_helpers.CONSTANT_TYPE_VIEW,       "u_mtx_view")
         defold_material.add_constant(defold_content_helpers.CONSTANT_VERTEX, defold_content_helpers.CONSTANT_TYPE_WORLD,      "u_mtx_world")
@@ -130,7 +177,42 @@ def make_project(gltf):
         defold_material.add_constant(defold_content_helpers.CONSTANT_VERTEX, defold_content_helpers.CONSTANT_TYPE_PROJECTION, "u_mtx_projection")
         defold_material.add_constant(defold_content_helpers.CONSTANT_VERTEX, defold_content_helpers.CONSTANT_TYPE_NORMAL,     "u_mtx_normal")
 
-        write_material(defold_material)
+        write_material(project_path, defold_material)
+
+        defold_material_lut[defold_material.name] = defold_material
+
+    for i in range(len(gltf_file.nodes)):
+        mesh         = gltf_file.meshes[gltf_file.nodes[i].mesh]
+        primitive    = mesh.primitives[0]
+        material     = gltf_file.materials[primitive.material]
+
+        mesh_path     = "/%s/%s.glb" % (MESH_PATH % project_path, gltf_file.nodes[i].name)
+        material_path = "/%s/%s.material" % (MATERIAL_PATH % project_path, material.name)
+
+        defold_model = defold_content_helpers.model(gltf_file.nodes[i].name)
+        defold_model.set_mesh(mesh_path)
+        defold_model.set_material(material_path)
+
+        defold_material = defold_material_lut[material.name]
+        for k,v in defold_material.textures.items():
+            tex = v
+            if v == None:
+                tex = NONE_TEXTURE_PATH
+            else:
+                tex = "/%s/%s.png" % (TEXTURE_PATH % project_path, v)
+            defold_model.add_texture(tex)
+        write_model(project_path, defold_model)
+
+        defold_go = defold_content_helpers.gameobject(gltf_file.nodes[i].name)
+        defold_go.set_model("/%s/%s.model" % (MODEL_PATH % project_path, gltf_file.nodes[i].name))
+        write_gameobject(project_path, defold_go)
+
+        defold_go_path = "/%s/%s.go" % (GAMEOBJECT_PATH % project_path, gltf_file.nodes[i].name)
+        defold_collection.add_go(gltf_file.nodes[i].name, defold_go_path)
+
+    write_collection(project_path, defold_collection)
+
+    write_collection_proxy(defold_collection_proxy)
 
     make_project_content(gltf)
 
