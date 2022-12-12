@@ -150,15 +150,21 @@ def make_project(gltf):
 
     gltf_file.convert_images(ImageFormat.FILE, path=image_base_path)
     for i in range(len(gltf_file.images)):
+        if gltf_file.images[i].name == None:
+            gltf_file.images[i].name = "Texture_%d" % i
+
         defold_texture_lut[i] = gltf_file.images[i].name
         image_path_i     = "%s/%s.png" % (image_base_path, i)
         image_path_named = "%s/%s.png" % (image_base_path, gltf_file.images[i].name)
         shutil.move(image_path_i, image_path_named)
 
     for i in range(len(gltf_file.materials)):
+        if gltf_file.materials[i].name == None:
+            gltf_file.materials[i].name = "Material_%d" % i
+
         defold_material = defold_content_helpers.material(gltf_file.materials[i].name)
 
-        defold_material.set_vertex_space(defold_content_helpers.VERTEX_SPACE_WORLD)
+        defold_material.set_vertex_space(defold_content_helpers.VERTEX_SPACE_LOCAL)
         defold_material.set_vertex_program(VERTEX_PATH)
         defold_material.set_fragment_program(FRAGMENT_PATH)
 
@@ -187,11 +193,17 @@ def make_project(gltf):
         defold_material_lut[defold_material.name] = defold_material
 
     for i in range(len(gltf_file.nodes)):
+        if gltf_file.nodes[i].mesh == None:
+            continue
+
+        if gltf_file.nodes[i].name == None:
+            gltf_file.nodes[i].name = "Model_%d" % i
+
         mesh         = gltf_file.meshes[gltf_file.nodes[i].mesh]
         primitive    = mesh.primitives[0]
         material     = gltf_file.materials[primitive.material]
 
-        mesh_path     = "/%s/%s.glb" % (MESH_PATH % project_path, gltf_file.nodes[i].name)
+        mesh_path     = "/%s/%s.glb" % (MESH_PATH % project_path, mesh.name)
         material_path = "/%s/%s.material" % (MATERIAL_PATH % project_path, material.name)
 
         defold_model = defold_content_helpers.model(gltf_file.nodes[i].name)

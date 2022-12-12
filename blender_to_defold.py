@@ -12,7 +12,7 @@ if __name__ == '__main__':
 	parser.add_argument('--verify-blend', nargs='+')
 	parser.add_argument('--blend-to-gltf', nargs='+')
 	parser.add_argument('--preview-gltf', nargs=1)
-	parser.add_argument('--clean')
+	parser.add_argument('--clean', action='store_true')
 
 	args = parser.parse_args()
 	if args.fbx_to_blend:
