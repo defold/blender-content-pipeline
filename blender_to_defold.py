@@ -8,11 +8,12 @@ import blender_utils
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Convert blender content to Defold')
-	parser.add_argument('--fbx-to-blend', nargs='+')
-	parser.add_argument('--verify-blend', nargs='+')
-	parser.add_argument('--blend-to-gltf', nargs='+')
-	parser.add_argument('--preview-gltf', nargs=1)
-	parser.add_argument('--clean', action='store_true')
+	parser.add_argument('--fbx-to-blend',   nargs='+')
+	parser.add_argument('--verify-blend',   nargs='+')
+	parser.add_argument('--blend-to-gltf',  nargs='+')
+	parser.add_argument('--gltf-to-defold', nargs=1)
+	parser.add_argument('--preview-gltf',   nargs=1)
+	parser.add_argument('--clean',          action='store_true')
 
 	args = parser.parse_args()
 	if args.fbx_to_blend:
@@ -25,6 +26,10 @@ if __name__ == '__main__':
 		print("Previewing .gltf in Defold")
 		import preview_gltf
 		preview_gltf.do_preview(args.preview_gltf[0])
+	if args.gltf_to_defold:
+		print("Building Defold project from gltf")
+		import convert_gltf_to_defold
+		convert_gltf_to_defold.do_build_project(args.gltf_to_defold)
 	if args.clean:
 		print("Cleaning build folder")
 		import preview_gltf
