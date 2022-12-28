@@ -95,19 +95,21 @@ class projectcontext(object):
         self.defold_material_lut = {}
         self.defold_texture_lut = {}
 
+        gltf_base_path = os.path.dirname(os.path.abspath(self.path_gltf))
+
         gltf_file.convert_images(ImageFormat.FILE, path=self.TEXTURE_PATH)
         for i in range(len(gltf_file.images)):
             if gltf_file.images[i].name == None:
                 gltf_file.images[i].name = "Texture_%d" % i
 
-            ext = "png"
-            if "jpeg" in gltf_file.images[i].mimeType:
-                ext = "jpg"
+            #ext = "png"
+            #if gltf_file.images[i].mimeType != None and "jpeg" in gltf_file.images[i].mimeType:
+            #    ext = "jpg"
 
             self.defold_texture_lut[i] = gltf_file.images[i].name
-            image_path_i     = "%s/%s.%s" % (self.TEXTURE_PATH, i, ext)
+            image_path_i     = "%s/%s" %  (gltf_base_path, gltf_file.images[i].uri) #(self.TEXTURE_PATH, i, ext)
             image_path_named = "%s/%s.png" % (self.TEXTURE_PATH, gltf_file.images[i].name)
-            shutil.move(image_path_i, image_path_named)
+            shutil.copy(image_path_i, image_path_named)
 
         for i in range(len(gltf_file.materials)):
             if gltf_file.materials[i].name == None:
@@ -121,7 +123,7 @@ class projectcontext(object):
 
             defold_material.add_tag("model")
             defold_material.add_sampler("tex_diffuse_irradiance")
-            defold_material.add_sampler("tex_prefiltered_reflection")
+            defold_material.add_sampler("tex_prefiltered_reflection", defold_content_helpers.FILTER_MODE_MIN_LINEAR_MIPMAP_LINEAR)
             defold_material.add_sampler("tex_brdflut")
             defold_material.add_sampler("tex_albedo")
             defold_material.add_sampler("tex_metallic_roughness")

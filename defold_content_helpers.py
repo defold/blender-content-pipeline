@@ -25,20 +25,27 @@ CONSTANT_TYPE_NORMAL     = "CONSTANT_TYPE_NORMAL"
 VERTEX_SPACE_WORLD       = "VERTEX_SPACE_WORLD"
 VERTEX_SPACE_LOCAL       = "VERTEX_SPACE_LOCAL"
 
+FILTER_MODE_MIN_LINEAR               = "FILTER_MODE_MIN_LINEAR"
+FILTER_MODE_MIN_LINEAR_MIPMAP_LINEAR = "FILTER_MODE_MIN_LINEAR_MIPMAP_LINEAR"
+FILTER_MODE_MAG_LINEAR               = "FILTER_MODE_MAG_LINEAR"
+
 def serialize_escaped_str(lbl, str):
     return "%s: \"%s\"" % (lbl, str)
 
-def serialize_sampler(sampler):
+def serialize_sampler(sampler, min_filter, mag_filter):
     SAMPLER_TEMPLATE = inspect.cleandoc("""
             samplers {{
                 name: \"{name}\"
                 wrap_u: WRAP_MODE_REPEAT
                 wrap_v: WRAP_MODE_REPEAT
-                filter_min: FILTER_MODE_MIN_LINEAR
-                filter_mag: FILTER_MODE_MAG_LINEAR
+                filter_min: {min_filter}
+                filter_mag: {mag_filter}
             }}
             """)
-    return SAMPLER_TEMPLATE.format(name = sampler)
+    return SAMPLER_TEMPLATE.format(
+        name       = sampler,
+        min_filter = min_filter,
+        mag_filter = mag_filter)
 
 def serialize_vec3(lbl, value):
     VEC3_VALUE_TEMPLATE = inspect.cleandoc("""
@@ -120,8 +127,11 @@ class material(object):
     def set_fragment_program(self, path):
         self.fragment_program = path
 
-    def add_sampler(self, sampler_name):
-        self.samplers.append(sampler_name)
+    def add_sampler(self, sampler_name, min_filter=FILTER_MODE_MIN_LINEAR, mag_filter=FILTER_MODE_MAG_LINEAR):
+        self.samplers.append({
+            "name"       : sampler_name,
+            "min_filter" : min_filter,
+            "mag_filter" : mag_filter})
 
     def add_tag(self, tag):
         self.tags.append(tag)
@@ -163,7 +173,7 @@ class material(object):
 
         samplers_str = ""
         for x in self.samplers:
-            samplers_str += serialize_sampler(x) + "\n"
+            samplers_str += serialize_sampler(x["name"], x["min_filter"], x["mag_filter"]) + "\n"
 
         vx_constants_str = ""
         for x in self.vertex_constants:
