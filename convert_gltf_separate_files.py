@@ -20,7 +20,8 @@ def split_gltf(path, outpath):
         bpy.ops.export_scene.gltf(filepath         =  file_path,
                                   use_selection    = True,
                                   export_format    = 'GLB',
-                                  export_materials = 'NONE')
+                                  export_materials = 'NONE',
+                                  export_tangents  = True)
 
 gltf_src = sys.argv[-2]
 gltf_out = sys.argv[-1]

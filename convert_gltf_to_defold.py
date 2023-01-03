@@ -109,7 +109,14 @@ class projectcontext(object):
             self.defold_texture_lut[i] = gltf_file.images[i].name
             image_path_i     = "%s/%s" %  (gltf_base_path, gltf_file.images[i].uri) #(self.TEXTURE_PATH, i, ext)
             image_path_named = "%s/%s.png" % (self.TEXTURE_PATH, gltf_file.images[i].name)
-            shutil.copy(image_path_i, image_path_named)
+
+            print(gltf_file.images[i])
+
+            if gltf_file.images[i].uri == None:
+                image_path_i = "%s/%s.png" % (self.TEXTURE_PATH, i)
+                shutil.move(image_path_i, image_path_named)
+            else:
+                shutil.copy(image_path_i, image_path_named)
 
         for i in range(len(gltf_file.materials)):
             if gltf_file.materials[i].name == None:
@@ -125,9 +132,9 @@ class projectcontext(object):
             defold_material.add_sampler("tex_diffuse_irradiance")
             defold_material.add_sampler("tex_prefiltered_reflection", defold_content_helpers.FILTER_MODE_MIN_LINEAR_MIPMAP_LINEAR)
             defold_material.add_sampler("tex_brdflut")
-            defold_material.add_sampler("tex_albedo")
+            defold_material.add_sampler("tex_albedo", defold_content_helpers.FILTER_MODE_MIN_LINEAR_MIPMAP_LINEAR)
             defold_material.add_sampler("tex_metallic_roughness")
-            defold_material.add_sampler("tex_normal")
+            defold_material.add_sampler("tex_normal", defold_content_helpers.FILTER_MODE_MIN_LINEAR_MIPMAP_LINEAR)
             defold_material.add_sampler("tex_occlusion")
             defold_material.add_sampler("tex_emissive")
 
