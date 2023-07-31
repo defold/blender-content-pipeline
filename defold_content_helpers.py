@@ -32,7 +32,7 @@ FILTER_MODE_MAG_LINEAR               = "FILTER_MODE_MAG_LINEAR"
 def serialize_escaped_str(lbl, str):
     return "%s: \"%s\"" % (lbl, str)
 
-def serialize_sampler(sampler, min_filter, mag_filter):
+def serialize_sampler(sampler, min_filter, mag_filter, max_anisotropy):
     SAMPLER_TEMPLATE = inspect.cleandoc("""
             samplers {{
                 name: \"{name}\"
@@ -40,12 +40,14 @@ def serialize_sampler(sampler, min_filter, mag_filter):
                 wrap_v: WRAP_MODE_REPEAT
                 filter_min: {min_filter}
                 filter_mag: {mag_filter}
+                max_anisotropy: {max_anisotropy}
             }}
             """)
     return SAMPLER_TEMPLATE.format(
-        name       = sampler,
-        min_filter = min_filter,
-        mag_filter = mag_filter)
+        name           = sampler,
+        min_filter     = min_filter,
+        mag_filter     = mag_filter,
+        max_anisotropy = max_anisotropy)
 
 def serialize_vec3(lbl, value):
     VEC3_VALUE_TEMPLATE = inspect.cleandoc("""
@@ -127,11 +129,12 @@ class material(object):
     def set_fragment_program(self, path):
         self.fragment_program = path
 
-    def add_sampler(self, sampler_name, min_filter=FILTER_MODE_MIN_LINEAR, mag_filter=FILTER_MODE_MAG_LINEAR):
+    def add_sampler(self, sampler_name, min_filter=FILTER_MODE_MIN_LINEAR, mag_filter=FILTER_MODE_MAG_LINEAR, max_anisotropy=1.0):
         self.samplers.append({
-            "name"       : sampler_name,
-            "min_filter" : min_filter,
-            "mag_filter" : mag_filter})
+            "name"           : sampler_name,
+            "min_filter"     : min_filter,
+            "mag_filter"     : mag_filter,
+            "max_anisotropy" : max_anisotropy})
 
     def add_tag(self, tag):
         self.tags.append(tag)
@@ -173,7 +176,7 @@ class material(object):
 
         samplers_str = ""
         for x in self.samplers:
-            samplers_str += serialize_sampler(x["name"], x["min_filter"], x["mag_filter"]) + "\n"
+            samplers_str += serialize_sampler(x["name"], x["min_filter"], x["mag_filter"], x["max_anisotropy"]) + "\n"
 
         vx_constants_str = ""
         for x in self.vertex_constants:

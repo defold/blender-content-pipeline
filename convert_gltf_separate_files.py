@@ -12,6 +12,7 @@ def split_gltf(path, outpath):
     os.makedirs(outpath, exist_ok=True)
 
     for x in bpy.context.scene.objects:
+        print(x)
         if not x.type == 'MESH':
             continue
         bpy.ops.object.select_all(action='DESELECT')
