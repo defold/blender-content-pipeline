@@ -37,6 +37,7 @@ class projectcontext(object):
         self.TEXTURE_CUBE_BLANK_PATH = "/defold-pbr/textures/blank_cube.cubemap"
         self.VERTEX_PATH             = "/defold-pbr/shaders/pbr.vp"
         self.FRAGMENT_PATH           = "/defold-pbr/shaders/pbr.fp"
+        self.MATERIAL_DEFAULT_PATH   = "/defold-pbr/materials/Defold-PBR.material"
 
     def get_texture(self, tex):
         if tex != None:
@@ -182,26 +183,29 @@ class projectcontext(object):
             if gltf_file.nodes[i].name == None:
                 gltf_file.nodes[i].name = "Model_%d" % i
 
-            mesh         = gltf_file.meshes[gltf_file.nodes[i].mesh]
-            primitive    = mesh.primitives[0]
-            material     = gltf_file.materials[primitive.material]
-
+            mesh          = gltf_file.meshes[gltf_file.nodes[i].mesh]
             mesh_path     = "/%s/meshes/%s.glb" % (self.PROJECT_BASE_PATH, gltf_file.nodes[i].name)
-            material_path = "/%s/materials/%s.material" % (self.PROJECT_BASE_PATH, material.name)
+            primitive     = mesh.primitives[0]
+            material_path = self.MATERIAL_DEFAULT_PATH
 
             defold_model = defold_content_helpers.model(gltf_file.nodes[i].name)
             defold_model.set_mesh(mesh_path)
-            defold_model.set_material(material_path)
 
-            defold_material = self.defold_material_lut[material.name]
-            for k,v in defold_material.textures.items():
-                tex = self.TEXTURE_2D_BLANK_PATH
-                if v != None:
-                    if v.startswith("/defold-pbr"):
-                        tex = v
-                    else:
-                        tex = "/%s/textures/%s.png" % (self.PROJECT_BASE_PATH, v)
-                defold_model.add_texture(tex)
+            if primitive.material != None:
+                material     = gltf_file.materials[primitive.material]
+                material_path = "/%s/materials/%s.material" % (self.PROJECT_BASE_PATH, material.name)
+
+                defold_material = self.defold_material_lut[material.name]
+                for k,v in defold_material.textures.items():
+                    tex = self.TEXTURE_2D_BLANK_PATH
+                    if v != None:
+                        if v.startswith("/defold-pbr"):
+                            tex = v
+                        else:
+                            tex = "/%s/textures/%s.png" % (self.PROJECT_BASE_PATH, v)
+                    defold_model.add_texture(tex)
+
+            defold_model.set_material(material_path)
             self.write_model(defold_model)
 
             defold_go = defold_content_helpers.gameobject(gltf_file.nodes[i].name)
